@@ -1,7 +1,7 @@
-use std::fs::{OpenOption, File};
+use std::fs::{OpenOptions, File};
 use std::io::Write;
 use std::sync::{Arc, Mutex};
-use std::time::{SystemTime, UNIX_PROCH};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 
 #[derive(Clone)]
@@ -24,7 +24,7 @@ impl AppLogger {
 
     pub fn log(&self, level: &str, message: &str) {
         let timestamp = SystemTime::now()
-            .duration_since(UNIX_PROCH)
+            .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_secs();
 

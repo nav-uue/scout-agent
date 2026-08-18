@@ -13,7 +13,4 @@ A lightweight, high-performance system monitoring agent written in Rust. It coll
 
 * **Rust (version 1.96.0+)**
 * **Cargo**: Included with the Rust installation
-
-## 📜 License
-
-This project is licensed under the MIT License.
+* **OS**: Linux

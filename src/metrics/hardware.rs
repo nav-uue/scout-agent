@@ -28,10 +28,10 @@ pub fn collect() -> HardwareInfo {
     sys.refresh_all();
     
     // RAM and SWAP info
-    let total_memory = format!("{}", sys.total_memory());
-    let used_memory = format!("{}", sys.used_memory());
-    let total_swap = format!("{}", sys.total_swap());
-    let used_swap = format!("{}", sys.used_swap());
+    let total_memory = format!("{}", sys.total_memory() / (1024 * 1024));
+    let used_memory = format!("{}", sys.used_memory() / (1024 * 1024));
+    let total_swap = format!("{}", sys.total_swap() / (1024 * 1024));
+    let used_swap = format!("{}", sys.used_swap() / (1024 * 1024));
 
     // CPU info
     for cpu in sys.cpus().iter() {
@@ -63,8 +63,8 @@ pub fn collect() -> HardwareInfo {
         let disk_fs = format!("Filesystem: {}", disk.file_system().to_string_lossy().into_owned());
         let disk_mp = format!("Mount point: {}", disk.mount_point().to_string_lossy().into_owned());
 
-        let total_space = format!("Total space: {}", disk.total_space());
-        let avalible_space = format!("Avalible space: {}", disk.available_space());
+        let total_space = format!("Total space: {}", disk.total_space() / (1024 * 1024));
+        let avalible_space = format!("Avalible space: {}", disk.available_space() / (1024 * 1024));
 
         let metrics_vector = vec![disk_type, disk_fs, disk_mp, total_space, avalible_space];
 

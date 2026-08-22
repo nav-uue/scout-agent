@@ -21,9 +21,7 @@ pub struct HardwareInfo {
 }
 
 
-pub fn collect() -> HardwareInfo {
-
-    let mut system_info_map = HashMap::new();
+fn metadata_parser(name: String) -> Vec<String> {
 
     let dmi = fs::read_dir("/sys/class/dmi/id").unwrap();
 
@@ -33,21 +31,33 @@ pub fn collect() -> HardwareInfo {
 
         let file_name_str = file.file_name().to_string_lossy().into_owned();
 
-        if file_name_str.contains("bios") {
+        if file_name_str.contains(&name) {
 
             let file_name = match file_name_str.split('_').last() {
                 Some(n) => n,
                 None => "Unknown"
             };
 
-            let bios = fs::read_to_string(file.path()).unwrap_or_else(|_| String::from("Unknown bios"));
+            let bios = fs::read_to_string(file.path()).unwrap_or_else(|_| format!("Unknown {}", &name));
             metrics_vector.push(format!("{}: {}", file_name, bios.trim_end()));
 
         }
 
     }
+
+    metrics_vector
+
+}
+
+
+pub fn collect() -> HardwareInfo {
+
+    let mut system_info_map = HashMap::new();
     
-    system_info_map.insert("metadata".to_string(), metrics_vector);
+    system_info_map.insert("bios".to_string(), metadata_parser("bios".to_string()));
+    system_info_map.insert("board".to_string(), metadata_parser("board".to_string()));
+    system_info_map.insert("chassis".to_string(), metadata_parser("chassis".to_string()));
+    system_info_map.insert("product".to_string(), metadata_parser("product".to_string()));
 
     // Initialize and refresh all system data
     let mut sys = System::new_all();

@@ -8,14 +8,7 @@ use std::fs;
 #[derive(Debug, Serialize)]
 pub struct HardwareInfo {
     system_info: HashMap<String, Vec<String>>,
-    #[serde(rename = "Total Memory")]
-    total_memory: String,
-    #[serde(rename = "Used Memory")]
-    used_memory: String,
-    #[serde(rename = "Total Swap")]
-    total_swap: String,
-    #[serde(rename = "Used Swap")]
-    used_swap: String,
+    memory: HashMap<String, Vec<String>>,
     cpus: HashMap<String, Vec<String>>,
     storage: HashMap<String, Vec<String>>
 }
@@ -52,6 +45,7 @@ fn metadata_parser(name: String) -> Vec<String> {
 
 pub fn collect() -> HardwareInfo {
 
+    // add metadata from /sys/class/dmi/id
     let mut system_info_map = HashMap::new();
     
     system_info_map.insert("bios".to_string(), metadata_parser("bios".to_string()));
@@ -64,10 +58,15 @@ pub fn collect() -> HardwareInfo {
     sys.refresh_all();
     
     // RAM and SWAP info
-    let total_memory = format!("{}", sys.total_memory() / (1024 * 1024));
-    let used_memory = format!("{}", sys.used_memory() / (1024 * 1024));
-    let total_swap = format!("{}", sys.total_swap() / (1024 * 1024));
-    let used_swap = format!("{}", sys.used_swap() / (1024 * 1024));
+    let mut memory_map = HashMap::new();
+
+    let total_memory = format!("Total RAM: {}", sys.total_memory() / (1024 * 1024));
+    let used_memory = format!("Used RAM: {}", sys.used_memory() / (1024 * 1024));
+    let total_swap = format!("Total SWAP{}", sys.total_swap() / (1024 * 1024));
+    let used_swap = format!("Used SWAP{}", sys.used_swap() / (1024 * 1024));
+
+    memory_map.insert("RAM".to_string(), vec![total_memory, used_memory]);
+    memory_map.insert("SWAP".to_string(), vec![total_swap, used_swap]);
 
     // CPU info
     let mut cpu_map = HashMap::new();
@@ -112,10 +111,7 @@ pub fn collect() -> HardwareInfo {
 
     HardwareInfo {
         system_info: system_info_map,
-        total_memory: total_memory,
-        used_memory: used_memory,
-        total_swap: total_swap,
-        used_swap: used_swap,
+        memory: memory_map,
         cpus: cpu_map,
         storage: disk_map
     }

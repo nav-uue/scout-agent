@@ -1,19 +1,21 @@
-use sysinfo::{Components, Disks, System};
+use sysinfo::{Disks, System};
 use serde::Serialize;
 use std::collections::HashMap;
 use std::path::Path;
+use std::fs;
 
 
 #[derive(Debug, Serialize)]
 pub struct HardwareInfo {
+    system_info: HashMap<String, Vec<String>>,
     #[serde(rename = "Total Memory")]
-    total_memory: Vec<String>,
+    total_memory: String,
     #[serde(rename = "Used Memory")]
-    used_memory: Vec<String>,
+    used_memory: String,
     #[serde(rename = "Total Swap")]
-    total_swap: Vec<String>,
+    total_swap: String,
     #[serde(rename = "Used Swap")]
-    used_swap: Vec<String>,
+    used_swap: String,
     cpus: HashMap<String, Vec<String>>,
     storage: HashMap<String, Vec<String>>
 }
@@ -21,7 +23,31 @@ pub struct HardwareInfo {
 
 pub fn collect() -> HardwareInfo {
 
-    let mut cpu_map = HashMap::new();
+    let mut system_info_map = HashMap::new();
+
+    let dmi = fs::read_dir("/sys/class/dmi/id").unwrap();
+
+    let mut metrics_vector: Vec<String> = Vec::new();
+
+    for file in dmi.flatten() {
+
+        let file_name_str = file.file_name().to_string_lossy().into_owned();
+
+        if file_name_str.contains("bios") {
+
+            let file_name = match file_name_str.split('_').last() {
+                Some(n) => n,
+                None => "Unknown"
+            };
+
+            let bios = fs::read_to_string(file.path()).unwrap_or_else(|_| String::from("Unknown bios"));
+            metrics_vector.push(format!("{}: {}", file_name, bios.trim_end()));
+
+        }
+
+    }
+    
+    system_info_map.insert("metadata".to_string(), metrics_vector);
 
     // Initialize and refresh all system data
     let mut sys = System::new_all();
@@ -34,6 +60,8 @@ pub fn collect() -> HardwareInfo {
     let used_swap = format!("{}", sys.used_swap() / (1024 * 1024));
 
     // CPU info
+    let mut cpu_map = HashMap::new();
+
     for cpu in sys.cpus().iter() {
         
         let cpu_name = format!("{}", cpu.name());
@@ -73,10 +101,11 @@ pub fn collect() -> HardwareInfo {
     }
 
     HardwareInfo {
-        total_memory: vec![total_memory],
-        used_memory: vec![used_memory],
-        total_swap: vec![total_swap],
-        used_swap: vec![used_swap],
+        system_info: system_info_map,
+        total_memory: total_memory,
+        used_memory: used_memory,
+        total_swap: total_swap,
+        used_swap: used_swap,
         cpus: cpu_map,
         storage: disk_map
     }

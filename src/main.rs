@@ -19,6 +19,7 @@ type SharedState = Arc<RwLock<String>>;
 // makes the main fuction async
 #[tokio::main]
 async fn main() {
+
     println!("Monitoring agent started successfully");
 
     // --- GET ALL SYSTEM INFORMATION ---
@@ -33,28 +34,32 @@ async fn main() {
     sleep(Duration::from_secs(1)).await;
 
     // --- BACKGROUND LOOP ---
-    // clone data for the background loop
-    let loop_data = shared_data.clone();
+    if SEND_JSON {
 
-    // start background loop
-    tokio::spawn(async move {
+        // clone data for the background loop
+        let loop_data = shared_data.clone();
 
-        loop {
+        // start background loop
+        tokio::spawn(async move {
 
-            let logger = AppLogger::new("scout-agent.log");
+            loop {
 
-            let json = loop_data.read().await;
+                let logger = AppLogger::new("scout-agent.log");
 
-            match notifier.send_alert(&json).await {
-                Ok(_) => logger.log("INFO", "Message send successfully"),
-                Err(e) => logger.log("Error", &format!("Failed to send message: {}", e))
+                let json = loop_data.read().await;
+
+                match notifier.send_alert(&json).await {
+                    Ok(_) => logger.log("INFO", "Message send successfully"),
+                    Err(e) => logger.log("Error", &format!("Failed to send message: {}", e))
+                }
+
+                sleep(Duration::from_secs(CHECK_INTERVAL_SECS)).await;
+
             }
 
-            sleep(Duration::from_secs(CHECK_INTERVAL_SECS)).await;
+        });
 
-        }
-
-    });
+    }
 
     // --- START AXUM WEB SERVER ON LOCAL MACHINE ---
     // pass shared_data as the state of Axum

@@ -1,8 +1,8 @@
 use sysinfo::System;
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct OsInfo {
     #[serde(rename = "System name")]
     system_name: String,

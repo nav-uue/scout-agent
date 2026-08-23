@@ -1,11 +1,11 @@
 use sysinfo::{Disks, System};
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 use std::collections::HashMap;
 use std::path::Path;
 use std::fs;
 
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct HardwareInfo {
     system_info: HashMap<String, Vec<String>>,
     memory: HashMap<String, Vec<String>>,
@@ -62,8 +62,8 @@ pub fn collect() -> HardwareInfo {
 
     let total_memory = format!("Total RAM: {}", sys.total_memory() / (1024 * 1024));
     let used_memory = format!("Used RAM: {}", sys.used_memory() / (1024 * 1024));
-    let total_swap = format!("Total SWAP{}", sys.total_swap() / (1024 * 1024));
-    let used_swap = format!("Used SWAP{}", sys.used_swap() / (1024 * 1024));
+    let total_swap = format!("Total SWAP: {}", sys.total_swap() / (1024 * 1024));
+    let used_swap = format!("Used SWAP: {}", sys.used_swap() / (1024 * 1024));
 
     memory_map.insert("RAM".to_string(), vec![total_memory, used_memory]);
     memory_map.insert("SWAP".to_string(), vec![total_swap, used_swap]);

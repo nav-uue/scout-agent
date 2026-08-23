@@ -1,9 +1,9 @@
 use sysinfo::Networks;
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 use std::collections::HashMap;
 
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct NetworkInfo {
     interfaces: HashMap<String, Vec<String>>,
 }

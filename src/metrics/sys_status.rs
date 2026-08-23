@@ -1,9 +1,9 @@
 use sysinfo::System;
 use std::collections::HashMap;
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct SysStatusInfo {
     top_process: HashMap<String, Vec<String>>
 }

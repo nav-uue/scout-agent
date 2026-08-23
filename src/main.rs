@@ -22,8 +22,8 @@ async fn main() {
     println!("Monitoring agent started successfully");
 
     // --- GET ALL SYSTEM INFORMATION ---
-    let host_id = String::from("HomePC");
-    let report = metrics::build_report(host_id);
+    let report = metrics::build_report();
+    // Convert report to JSON string 
     let json_result = serde_json::to_string_pretty(&report).unwrap();
 
     let shared_data: SharedState = Arc::new(RwLock::new(json_result));

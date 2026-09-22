@@ -1,5 +1,3 @@
-use axum::{extract::State, routing::get, Router};
-use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::RwLock;
 use tokio::time::sleep;
@@ -12,9 +10,7 @@ mod notifier;
 mod config;
 use config::*;
 
-
-// Create a type alias
-type SharedState = Arc<RwLock<String>>;
+mod web;
 
 // makes the main fuction async
 #[tokio::main]
@@ -27,7 +23,7 @@ async fn main() {
     // Convert report to JSON string 
     let json_result = serde_json::to_string_pretty(&report).unwrap();
 
-    let shared_data: SharedState = Arc::new(RwLock::new(json_result));
+    let shared_data = std::sync::Arc::new(RwLock::new(json_result));
 
     let notifier = notifier::Notifier::new(WEBHOOK_URL.to_string());
 
@@ -62,22 +58,6 @@ async fn main() {
     }
 
     // --- START AXUM WEB SERVER ON LOCAL MACHINE ---
-    // pass shared_data as the state of Axum
-    let app = Router::new()
-        .route("/system-info", get(handle_get_data))
-        .with_state(shared_data);
-
-    // start server on port 3000
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:3000").await.unwrap();
-    println!("🚀 Server is running at http://127.0.0.1:3000");
-    println!("To test, run: curl http://127.0.0.1:3000/system-info");
-
-    axum::serve(listener, app).await.unwrap();
-
-    // Separate clean handler for the HTTP request
-    async fn handle_get_data(State(state): State<SharedState>) -> String {
-        let read_guard = state.read().await;
-        read_guard.clone() // Return a copy of the string to the client
-    }
+    web::LocalInfo::new(shared_data).run().await;
 
 }

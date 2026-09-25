@@ -1,6 +1,7 @@
 pub const SEND_JSON: bool = false;
+pub const SEND_INTERVAL: u64 = 360;
 pub const WEBHOOK_URL: &str = "http://127.0.0.1:5000";
-pub const CHECK_INTERVAL_SECS: u64 = 360;
+pub const LOCAL_SERVER: &str = "127.0.0.1:3000";
 pub const LABEL: &str = r#"
 ***************************************************************
 *                       _                               _     *

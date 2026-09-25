@@ -6,6 +6,8 @@ use axum::{
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
+use crate::config::LOCAL_SERVER;
+
 
 // Create a type alias
 type SharedState = Arc<RwLock<String>>;
@@ -27,12 +29,12 @@ impl LocalInfo {
             .with_state(self.shared_data);
 
         // start server on port 3000
-        let listner = tokio::net::TcpListener::bind("127.0.0.1:3000")
+        let listner = tokio::net::TcpListener::bind(LOCAL_SERVER)
             .await
             .unwrap();
 
-        println!("🚀 Server is running at http://127.0.0.1:3000");
-        println!("To test, run: curl http://127.0.0.1:3000/system-info");
+        println!("🚀 Server is running at http://{}", LOCAL_SERVER);
+        println!("To test, run: curl http://{}/system-info", LOCAL_SERVER);
         
         // run server
         axum::serve(listner, app).await.unwrap();

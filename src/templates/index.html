@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Monitoring</title>
+    <style>
+        :root {
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --bg-inner: #0f172a;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --accent-green: #10b981;
+            --accent-blue: #3b82f6;
+            --border-color: #334155;
+        }
+
+        * { 
+            box-sizing: border-box; 
+            margin: 0; 
+            padding: 0; 
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            padding: 24px;
+            line-height: 1.5;
+        }
+
+        /* Main container optimized for large screens (up to 1600px) */
+        .container { 
+            max-width: 1600px; 
+            margin: 0 auto; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 24px; 
+        }
+
+        /* Header */
+        header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            border-bottom: 1px solid var(--border-color); 
+            padding-bottom: 16px; 
+        }
+
+        h1 { 
+            font-size: 24px; 
+            font-weight: 700; 
+            letter-spacing: -0.5px; 
+        }
+
+        h2 { 
+            font-size: 18px; 
+            font-weight: 600; 
+            margin-bottom: 16px; 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+        }
+
+        /* Cards and containers */
+        .card { 
+            background-color: var(--bg-card); 
+            padding: 20px; 
+            border-radius: 12px; 
+            border: 1px solid var(--border-color); 
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); 
+        }
+
+        .inner-box { 
+            background-color: var(--bg-inner); 
+            padding: 12px; 
+            border-radius: 8px; 
+            font-family: monospace; 
+        }
+
+        .inner-box span { 
+            display: block; 
+        }
+
+        .label { 
+            color: var(--text-muted); 
+            font-size: 12px; 
+            text-transform: uppercase; 
+            font-weight: 600; 
+        }
+
+        .value { 
+            font-size: 16px; 
+            color: #fff; 
+            margin-top: 2px; 
+        }
+
+        /* Responsive grid: 1 column on mobile, 2 columns on desktop */
+        .grid-adaptive { 
+            display: grid; 
+            grid-template-columns: 1fr; 
+            gap: 24px; 
+        }
+
+        @media (min-width: 1024px) {
+            .grid-adaptive { 
+                grid-template-columns: repeat(2, 1fr); 
+            }
+        }
+
+        /* Grid for DMI hardware (4 columns on large screens) */
+        .grid-4 { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+            gap: 16px; 
+        }
+
+        /* Line charts (Memory) */
+        .progress-bar-bg { 
+            background-color: var(--bg-inner); 
+            width: 100%; 
+            height: 12px; 
+            border-radius: 6px; 
+            overflow: hidden; 
+            margin-top: 4px; 
+        }
+
+        .progress-bar-fill { 
+            height: 100%; 
+            border-radius: 6px; 
+            width: 0%; 
+            transition: width 0.5s ease; 
+        }
+
+        .fill-green { background-color: var(--accent-green); }
+        .fill-blue { background-color: var(--accent-blue); }
+        .flex-between { display: flex; justify-content: space-between; font-size: 14px; }
+
+        /* Disk tables */
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            font-family: monospace; 
+            font-size: 14px; 
+            text-align: left; 
+        }
+
+        th { 
+            color: var(--text-muted); 
+            text-transform: uppercase; 
+            font-size: 12px; 
+            padding-bottom: 12px; 
+            border-bottom: 1px solid var(--border-color); 
+        }
+
+        td { 
+            padding: 12px 0; 
+            border-bottom: 1px solid rgba(51, 65, 85, 0.5); 
+        }
+
+        .text-right { 
+            text-align: right; 
+        }
+
+        /* Color labels (Network badges) */
+        .badge { 
+            font-size: 11px; 
+            padding: 2px 8px; 
+            border-radius: 4px; 
+            font-weight: 600; 
+        }
+
+        .badge-eth { background-color: rgba(16, 185, 129, 0.1); color: var(--accent-green); }
+        .badge-wifi { background-color: rgba(59, 130, 246, 0.1); color: var(--accent-blue); }
+        .badge-loop { background-color: var(--border-color); color: var(--text-muted); }
+
+        /* UI Placeholders */
+        .error-msg { color: #f87171; text-align: center; padding: 20px; font-weight: bold; }
+
+    </style>
+</head>
+<body>
+
+    <!-- Content hidden until data is loaded -->
+    <div class="container" id="main-container" style="display: none;">
+        <header>
+            <div>
+                <h1>Host Statistics</h1>
+                <div style="color: var(--text-muted); font-size: 14px; margin-top: 4px;">
+                    Host ID: <span id="host-id" style="font-family: monospace; color: var(--accent-green);"></span>
+                </div>
+            </div>
+            <div id="datetime" style="font-family: monospace; font-size: 13px; background: var(--bg-card); padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border-color);"></div>
+        </header>
+
+        <div class="grid-adaptive">
+            <!-- Section 1: OS -->
+            <div class="card">
+                <h2>🖥️ OS Information</h2>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px;">
+                    <div class="inner-box"><span class="label">System</span><span class="value" id="os-name">...</span></div>
+                    <div class="inner-box"><span class="label">OS version</span><span class="value" id="os-version">...</span></div>
+                    <div class="inner-box"><span class="label">Core</span><span class="value" id="os-kernel">...</span></div>
+                    <div class="inner-box"><span class="label">Hostname</span><span class="value" id="os-host">...</span></div>
+                </div>
+            </div>
+
+            <!-- Section 2: Memory (RAM, SWAP) -->
+            <div class="card">
+                <h2>🧠 RAM</h2>
+                <div style="display: flex; flex-direction: column; gap: 16px;">
+                    <div>
+                        <div class="flex-between">
+                            <span style="color: var(--text-muted)">RAM (Used / Total)</span>
+                            <span id="ram-text" style="font-family: monospace; font-weight: bold; color: var(--accent-green)"></span>
+                        </div>
+                        <div class="progress-bar-bg">
+                            <div id="ram-bar" class="progress-bar-fill fill-green"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex-between">
+                            <span style="color: var(--text-muted)">SWAP (Used / Total)</span>
+                            <span id="swap-text" style="font-family: monospace; font-weight: bold; color: var(--accent-blue)"></span>
+                        </div>
+                        <div class="progress-bar-bg">
+                            <div id="swap-bar" class="progress-bar-fill fill-blue"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 3: Storage -->
+            <div class="card">
+                <h2>💾 Storage</h2>
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Mount point</th>
+                                <th>File ...</th>
+                                <th>Type</th>
+                                <th class="text-right">Total</th>
+                                <th class="text-right">Free</th>
+                            </tr>
+                        </thead>
+                        <tbody id="storage-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Section 4: Network -->
+            <div class="card">
+                <h2>🌐 Network Interfaces</h2>
+                <div id="network-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px;"></div>
+            </div>
+        </div>
+
+        <!-- Section 5: DMI -->
+        <div class="card" style="width: 100%;">
+            <h2>⚙️ Hardware Specifications (DMI)</h2>
+            <div class="grid-4" id="dmi-container"></div>
+        </div>
+    </div>
+
+    <div id="loading" style="text-align: center; color: var(--text-muted); margin-top: 100px; font-size: 18px;">
+        Loading System Metrics...
+    </div>
+
+    <script>
+
+        // Converts string arrays into objects
+        function parseArrayToObj(arr) {
+            const obj = {};
+            if (!arr || !Array.isArray(arr)) return obj;
+            arr.forEach(item => {
+                if (!item) return;
+                const idx = item.indexOf(':');
+                if (idx !== -1) {
+                    const key = item.substring(0, idx).trim();
+                    const val = item.substring(idx + 1).trim();
+                    obj[key] = val;
+                }
+            });
+            return obj;
+        }
+
+        // Automatically converts raw bytes into KB, MB, GB
+        function formatBytes(bytesString) {
+            if (!bytesString) return "0 B";
+            const bytes = parseInt(bytesString.replace(/[^0-9]/g, ''), 10);
+            if (isNaN(bytes) || bytes === 0) return "0 B";
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+        
+        function renderData(data) {
+            if (!data) return;
+            
+            // Header info
+            document.getElementById('host-id').textContent = data.host_id || 'Невідомо';
+            document.getElementById('datetime').textContent = data.datatime || '—';
+
+            // Populating Section 1 (OS)
+            if (data.os_info) {
+                document.getElementById('os-name').textContent = data.os_info["System name"] || '—';
+                document.getElementById('os-version').textContent = data.os_info["OS Version"] || '—';
+                document.getElementById('os-kernel').textContent = data.os_info["Kernel Version"] || '—';
+                document.getElementById('os-host').textContent = data.os_info["Host Name"] || '—';
+            }
+
+            // Populating Section 2 (RAM & SWAP)
+            if (data.hardware && data.hardware.memory) {
+                const ram = parseArrayToObj(data.hardware.memory.RAM);
+                const swap = parseArrayToObj(data.hardware.memory.SWAP);
+                
+                // Calculate and display RAM usage
+                const totalRam = parseInt(ram["Total RAM"]) || 0;
+                const usedRam = parseInt(ram["Used RAM"]) || 0;
+                if (totalRam > 0) {
+                    const ramPct = ((usedRam / totalRam) * 100).toFixed(1);
+                    document.getElementById('ram-text').textContent = `${usedRam} MB / ${totalRam} MB (${ramPct}%)`;
+                    document.getElementById('ram-bar').style.width = ramPct + '%';
+                }
+
+                // Calculate and display SWAP usage
+                const totalSwap = parseInt(swap["Total SWAP"]) || 0;
+                const usedSwap = parseInt(swap["Used SWAP"]) || 0;
+                const swapPct = totalSwap > 0 ? ((usedSwap / totalSwap) * 100).toFixed(1) : 0;
+                document.getElementById('swap-text').textContent = `${usedSwap} MB / ${totalSwap} MB (${swapPct}%)`;
+                document.getElementById('swap-bar').style.width = swapPct + '%';
+            }
+
+            // Populating Section 3 (Storage)
+            const tableBody = document.getElementById('storage-table-body');
+            tableBody.innerHTML = ''; // Clear table content
+            
+            if (data.hardware && data.hardware.storage) {
+                Object.keys(data.hardware.storage).forEach(key => {
+                    const disk = parseArrayToObj(data.hardware.storage[key]);
+                    
+                    // Convert space from MB to GB
+                    const totalGb = (parseInt(disk["Total space"]) / 1024).toFixed(2);
+                    const availGb = (parseInt(disk["Avalible space"]) / 1024).toFixed(2);
+                    
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td style="font-weight: bold; color: #fff;">${disk["Mount point"] || key}</td>
+                        <td>${disk["Filesystem"] || '—'}</td>
+                        <td>${disk["Type"] || '—'}</td>
+                        <td class="text-right">${isNaN(totalGb) ? '—' : totalGb + ' GB'}</td>
+                        <td class="text-right" style="color: var(--accent-green);">${isNaN(availGb) ? '—' : availGb + ' GB'}</td>
+                    `;
+                    tableBody.appendChild(tr);
+                });
+            }
+
+            // Populating Section 4 (Network)
+            const netContainer = document.getElementById('network-container');
+            netContainer.innerHTML = ''; // Clear container
+            
+            if (data.network && data.network.interfaces) {
+                Object.keys(data.network.interfaces).forEach(iface => {
+                    const net = parseArrayToObj(data.network.interfaces[iface]);
+                    
+                    // Get interface type for badge
+                    let badgeClass = 'badge-loop';
+                    let badgeText = 'Loopback';
+                    if (iface.startsWith('en')) { badgeClass = 'badge-eth'; badgeText = 'Ethernet'; }
+                    if (iface.startsWith('wl')) { badgeClass = 'badge-wifi'; badgeText = 'Wi-Fi'; }
+
+                    const div = document.createElement('div');
+                    div.className = 'inner-box';
+                    div.style.backgroundColor = 'var(--bg-card)';
+                    div.style.border = '1px solid var(--border-color)';
+                    div.innerHTML = `
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; margin-bottom: 8px;">
+                            <span style="font-size: 16px; font-weight: bold; color: #fff;">${iface}</span>
+                            <span class="badge ${badgeClass}">${badgeText}</span>
+                        </div>
+                        <span style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px;">MAC: ${net["MAC"] || '—'}</span>
+                        <div class="flex-between" style="font-size: 12px; margin-top: 4px;">
+                            <span>📥 RX: <span style="color:#fff">${formatBytes(net["RX"])}</span></span>
+                            <span>📤 TX: <span style="color:#fff">${formatBytes(net["TX"])}</span></span>
+                        </div>
+                    `;
+                    netContainer.appendChild(div);
+                });
+            }
+
+            // Populating Section 5 (DMI)
+            const dmiContainer = document.getElementById('dmi-container');
+            dmiContainer.innerHTML = ''; // Clear container
+            
+            if (data.hardware && data.hardware.system_info) {
+                Object.keys(data.hardware.system_info).forEach(key => {
+                    const info = parseArrayToObj(data.hardware.system_info[key]);
+                    const div = document.createElement('div');
+                    div.className = 'inner-box';
+                    
+                    let htmlContent = `<span class="label" style="color: #fff; margin-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 4px;">${key}</span>`;
+                    Object.keys(info).forEach(prop => {
+                        htmlContent += `<span style="color: var(--text-muted); font-size: 11px; display: block;">${prop}: <strong style="color: #cbd5e1">${info[prop]}</strong></span>`;
+                    });
+                    
+                    div.innerHTML = htmlContent;
+                    dmiContainer.appendChild(div);
+                });
+            }
+
+            // Toggle page visibility
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('main-container').style.display = 'flex';
+        }
+
+        // Fetch data from Axum route /system-info
+        async function fetchMetrics() {
+            try {
+                const response = await fetch('/system-info');
+                if (!response.ok) throw new Error('Error code: ' + response.status);
+                const jsonData = await response.json();
+                renderData(jsonData);
+            } catch (error) {
+                document.getElementById('loading').innerHTML = `<div class="error-msg">❌ Data loading failed: ${error.message}</div>`;
+            }
+        }
+
+        // Initial run on page load + auto-update every 5 seconds
+        window.addEventListener('DOMContentLoaded', () => {
+            fetchMetrics(); // First run
+            setInterval(fetchMetrics, 5000); // Repeat every 5000 ms (5 seconds)
+        });
+
+    </script>
+</body>
+</html>

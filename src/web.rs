@@ -1,4 +1,8 @@
-use axum::{extract::State, routing::get, Router};
+use axum::{
+    extract::State,
+    routing::get,
+    response::Html,
+    Router};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
@@ -18,6 +22,7 @@ impl LocalInfo {
     pub async fn run(self) {
         // pass shared_data as the state of Axum
         let app = Router::new()
+            .route("/", get(Self::handle_home_page))
             .route("/system-info", get(Self::handle_get_data))
             .with_state(self.shared_data);
 
@@ -32,6 +37,10 @@ impl LocalInfo {
         // run server
         axum::serve(listner, app).await.unwrap();
 
+    }
+
+    async fn handle_home_page() -> Html<&'static str> {
+        Html(include_str!("templates/index.html"))
     }
 
     // Separate clean handler for the HTTP request
